@@ -13,70 +13,48 @@ export class SpeedComponent implements OnInit {
   }
 
   code = `
-  import { Injectable } from '@angular/core';
-  import {
-    HubConnection,
-    HubConnectionBuilder,
-    LogLevel,
-  } from '@microsoft/signalr';
-  import { CardInfo } from './speed-game/speed-game.component';
-  @Injectable({
-    providedIn: 'root',
-  })
-  export class SignalrService {
-    private hubConnection: HubConnection = new HubConnectionBuilder()
-      .withUrl('/game')
-      .build();
-  
-    constructor() {}
-    public startConnection() {
-      this.hubConnection
-        .start()
-        .then(() => console.log('connection started'))
-        .catch((err) => console.log(` + '$(Error connecting: ${err})' + `));
-    }
-  
-    public addHandler(funcName: string, func: any) {
-      this.hubConnection.on(funcName, func);
-    }
-  
-    public disposeHandlers(funcName: string) {
-      this.hubConnection.off(funcName);
-    }
-  
-    public playCard(data: any) {
-      this.hubConnection
-        .send('PlayCard', data)
-        .catch((err) => console.log(` + 'Error with play card: ${err}' + `));
-    }
-  
-    public async reset(data: any) {
-      let result = await this.hubConnection.invoke('Reset', data);
-      // .catch((err) => console.log(` + 'Error with play card: ${err}' + `));
-    }
-  
-    public newGame() {
-      this.hubConnection
-        .send('NewGame')
-        .catch((err) => console.log(` + 'Error with test: ${err}' + `));
-    }
-  
-    public playAgain(userName: string, willing: boolean) {
-      this.hubConnection
-        .send('PlayAgain', userName, willing)
-        .catch((err) => console.log(` + 'Error with PlayAgain: ${err}' + `));
-    }
-  
-    public newUser(userName: string) {
-      this.hubConnection
-        .send('NewUser', userName)
-        .catch((err) => console.log(` + 'Error with NewUser: ${err}' + `));
-    }
-  
-    public getConnectionId(): string {
-      return this.hubConnection.connectionId;
-    }
+  public async Task NewGame()
+  {
+      Console.WriteLine(Context.ConnectionId);
+
+      var deck = NewDeck();
+      var playerOneHand = deck.GetRange(0, 5);
+      var playerTwoHand = deck.GetRange(5, 5);
+      var continueL = deck.GetRange(10, 5);
+      var continueR = deck.GetRange(15, 5);
+      var playerOneStack = deck.GetRange(20, 15);
+      var playerTwoStack = deck.GetRange(35, 15);
+      var playL = deck.GetRange(50, 1).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = true });
+      var playR = deck.GetRange(51, 1).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = true });
+
+      await Clients.All.SendAsync("NewGame", new { PlayerOneHand = playerOneHand, PlayerTwoHand = playerTwoHand, ContinueL = continueL, ContinueR = continueR, PlayerOneStack = playerOneStack, PlayerTwoStack = playerTwoStack, PlayL = playL, PlayR = playR, players = playerData.players }, Context.ConnectionAborted);
   }
-  
+
+  public async Task Reset(Reset obj)
+  {
+      var stack = new List<Card>();
+      stack.AddRange(obj.PlayL);
+      stack.AddRange(obj.PlayR);
+      stack.AddRange(obj.ContinueL);
+      stack.AddRange(obj.ContinueR);
+
+      stack = stack.OrderBy(a => Guid.NewGuid()).ToList();
+      var continueL = stack.GetRange(0, 5).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = false }).ToList();
+      var continueR = stack.GetRange(5, 5).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = false }).ToList();
+      var count = stack.Count - 10;
+
+      if (stack.Count % 2 == 0)
+      {
+          var playL = stack.GetRange(10, count / 2).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = true }).ToList();
+          var playR = stack.GetRange(10 + count / 2, count / 2).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = true }).ToList();
+          await Clients.All.SendAsync("ResetHandler", new Reset { ContinueL = continueL, ContinueR = continueR, PlayL = playL, PlayR = playR, IsPlayerOne = obj.IsPlayerOne });
+      }
+      else
+      {
+          var playL = stack.GetRange(10, (count + 1) / 2).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = true }).ToList();
+          var playR = stack.GetRange(10 + (count + 1) / 2, count - (count + 1) / 2).Select(c => new Card { SuiteNumber = c.SuiteNumber, House = c.House, FaceUp = true }).ToList();
+          await Clients.All.SendAsync("ResetHandler", new Reset { ContinueL = continueL, ContinueR = continueR, PlayL = playL, PlayR = playR, IsPlayerOne = obj.IsPlayerOne });
+      }
+  }
   `
 }

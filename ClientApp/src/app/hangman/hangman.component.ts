@@ -12,56 +12,35 @@ export class HangmanComponent implements OnInit {
   ngOnInit(): void {
   }
   code = `
-  @page "/Highscore"
-  @using crumbs.Data
-  @using Microsoft.EntityFrameworkCore
-  @implements IDisposable
-  
-  @inject IDbContextFactory<HangmanDbContext> DbFactory
-  <PageTitle>Highscore</PageTitle>
-  <h3>Highscore</h3>
-  
-  @if (TopScorers == null)
-  {
-      <MudProgressCircular Color="Color.Default" Indeterminate="true" />
-  }
-  else
-  {
-      <MudTable Items="TopScorers" Hover="true" SortLabel="Sort By" Elevation="0">
-          <HeaderContent>
-              <MudTh><MudTableSortLabel SortBy="new Func<Highscore, object>(x=>x.Username)">Username</MudTableSortLabel></MudTh>
-              <MudTh><MudTableSortLabel SortBy="new Func<Highscore, object>(x=>x.Score)">Score</MudTableSortLabel></MudTh>
-          </HeaderContent>
-          <RowTemplate>
-              <MudTd DataLabel="Username">@context.Username</MudTd>
-              <MudTd DataLabel="Score">@context.Score</MudTd>
-          </RowTemplate>
-          <PagerContent>
-              <MudTablePager PageSizeOptions="new int[]{50, 100}" />
-          </PagerContent>
-      </MudTable>
-  }
-  
-  @code {
-      List<Highscore> TopScorers = new List<Highscore>();
-      private HangmanDbContext HangmanDb { get; set; }
-  
-      protected override async Task OnInitializedAsync()
-      {
-          HangmanDb = await DbFactory.CreateDbContextAsync();
-  
-          var query = HangmanDb.Highscores
-              .OrderBy(s => s.Score)
-              .Take(10);
-          
-          TopScorers = query
-              .ToList();
-          await base.OnInitializedAsync();
-      }
-      public void Dispose()
-      {
-          HangmanDb?.Dispose();
-      }
-  }
+<PageTitle>Hangman!</PageTitle>
+<MudGrid>
+    <MudItem xs="12" sm="9">
+        <MudPaper>
+            <MudForm style="padding: 25px;">
+                    <h1 style="text-align:center">Welcome to the Hangman Game!</h1>
+                    <img id="imageGame" style="display:none;" src="@imageSource" />
+                    <p id="descriptionGame" style="padding:25px; text-align:center;">Hangman is an old school favorite, a word game where the goal is simply to find the missing word or words. 
+                      You will be presented with a number of blank spaces representing the missing letters you need to find. <br /> Use the keyboard to guess a letter (I recommend starting with vowels). 
+                      If your chosen letter exists in the answer, then all places in the answer where that letter appear will be revealed. <br /> After you've revealed several letters, you may be able to guess what the answer 
+                      is and fill in the remaining letters. Be warned, every time you guess a letter wrong you lose a life and the hangman begins to appear, piece by piece. <br />Solve the puzzle before the hangman dies.
+                    </p>
+
+                    <MudItem xs="1" sm="1" style="display:none;" id="counterDiv">
+                        <MudField id="counter" FullWidth="true" Variant="Variant.Text" style="display:none;">@counter</MudField>
+                    </MudItem>
+                    <MudField id="numberToGuess" FullWidth="true" Variant="Variant.Text" style="display:none;">@underlines</MudField>
+                    <MudField id="incorrectGuess" FullWidth="true" Variant="Variant.Text" style="display:none;">Incorrect Letters<br> @wrongletters</MudField>
+                    <MudField id="prompt" Variant="Variant.Text" style="display:none;" DisableUnderLine="true">Enter Letter: </MudField>  
+                    <MudItem xs="1" sm="1" style="display:none;" id="userletterDiv">            
+                        <MudTextField id="userLetter" @bind-Value="letter" Variant="Variant.Text" MaxLength="1"></MudTextField>  
+                    </MudItem>
+                    <MudButton id="startGame" Variant="Variant.Filled" style="padding:10px; margin-left: auto; margin-right: auto; display:block" Color="Color.Primary" DisableElevation="true" OnClick="StartGame">Start!</MudButton>
+                    <MudButton id="submitLetter" Variant="Variant.Filled" style="display:none;" Color="Color.Primary" DisableElevation="true" OnClick="GuessLetter">Submit!</MudButton>
+                    <MudButton id="newGame" Variant="Variant.Filled" style="display:none;" Color="Color.Primary" DisableElevation="true" OnClick="StartGame">Play again!</MudButton>
+            </MudForm>   
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
   `
 }
